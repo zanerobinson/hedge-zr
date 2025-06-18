@@ -46,7 +46,7 @@ def valuation_analyst_agent(state: AgentState):
         progress.update_status("valuation_analyst_agent", ticker, "Gathering line items")
         line_items = search_line_items(
             ticker=ticker,
-            line_items=[
+            line_items_list=[
                 "free_cash_flow",
                 "net_income",
                 "depreciation_and_amortization",

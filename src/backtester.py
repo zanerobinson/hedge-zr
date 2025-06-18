@@ -1,4 +1,5 @@
 import sys
+import time
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -284,6 +285,8 @@ class Backtester:
 
             # Fetch company news
             get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            
+            print(f"{ticker} fetched successfully")
 
         print("Data pre-fetch complete.")
 
@@ -637,8 +640,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--margin-requirement",
         type=float,
-        default=0.0,
-        help="Margin ratio for short positions, e.g. 0.5 for 50% (default: 0.0)",
+        default=0.5,
+        help="Margin ratio for short positions, e.g. 0.5 for 50% (default: 0.5)",
     )
     parser.add_argument(
         "--analysts",

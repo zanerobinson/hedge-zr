@@ -2,8 +2,9 @@ import datetime
 import os
 import pandas as pd
 import requests
+import time
 
-from src.data.cache import get_cache
+from src.data.cache import get_cache, save_cache
 from src.data.models import (
     CompanyNews,
     CompanyNewsResponse,
@@ -39,17 +40,25 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     url = f"https://api.financialdatasets.ai/prices/?ticker={ticker}&interval=day&interval_multiplier=1&start_date={start_date}&end_date={end_date}"
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+        print(f"Error fetching prices: {ticker} - {response.status_code} - {response.text}")
 
     # Parse response with Pydantic model
     price_response = PriceResponse(**response.json())
     prices = price_response.prices
 
+    time.sleep(1)
+
     if not prices:
         return []
 
+<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+=======
+    # Cache the results as dicts
+    _cache.set_prices(ticker, [p.model_dump() for p in prices])
+    save_cache()
+>>>>>>> line-item-cache
     return prices
 
 
@@ -75,35 +84,83 @@ def get_financial_metrics(
     url = f"https://api.financialdatasets.ai/financial-metrics/?ticker={ticker}&report_period_lte={end_date}&limit={limit}&period={period}"
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+        print(f"Error fetching metrics: {ticker} - {response.status_code} - {response.text}")
 
     # Parse response with Pydantic model
     metrics_response = FinancialMetricsResponse(**response.json())
     financial_metrics = metrics_response.financial_metrics
-
+    
+    time.sleep(1)
+    
     if not financial_metrics:
         return []
 
+<<<<<<< HEAD
     # Cache the results as dicts using the comprehensive cache key
     _cache.set_financial_metrics(cache_key, [m.model_dump() for m in financial_metrics])
+=======
+    # Cache the results as dicts
+    _cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
+    save_cache()
+>>>>>>> line-item-cache
     return financial_metrics
 
 
 def search_line_items(
     ticker: str,
-    line_items: list[str],
+    line_items_list: list[str],
     end_date: str,
     period: str = "ttm",
     limit: int = 10,
 ) -> list[LineItem]:
     """Fetch line items from API."""
+    if cached_data := _cache.get_line_items(ticker):
+        # Filter cached data by date and limit
+        filtered_data = [LineItem(**item) for item in cached_data if item["report_period"] <= end_date]
+        filtered_data.sort(key=lambda x: x.report_period, reverse=True)
+        if filtered_data:
+            return filtered_data[:limit]
+
     # If not in cache or insufficient data, fetch from API
     headers = {}
     if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
         headers["X-API-KEY"] = api_key
 
     url = "https://api.financialdatasets.ai/financials/search/line-items"
-
+    
+    line_items = [
+        'book_value_per_share',
+        'capital_expenditure',
+        'cash_and_equivalents',
+        'current_assets',
+        'current_liabilities',
+        'debt_to_equity',
+        'depreciation_and_amortization',
+        'dividends_and_other_cash_distributions',
+        'earnings_per_share',
+        'ebit',
+        'ebitda',
+        'free_cash_flow',
+        'goodwill_and_intangible_assets',
+        'gross_margin',
+        'gross_profit',
+        'interest_expense',
+        'issuance_or_purchase_of_equity_shares',
+        'net_income',
+        'operating_expense',
+        'operating_income',
+        'operating_margin',
+        'outstanding_shares',
+        'research_and_development',
+        'return_on_invested_capital',
+        'revenue',
+        'shareholders_equity',
+        'total_assets',
+        'total_debt',
+        'total_liabilities',
+        'working_capital',
+    ]
+    
     body = {
         "tickers": [ticker],
         "line_items": line_items,
@@ -113,14 +170,19 @@ def search_line_items(
     }
     response = requests.post(url, headers=headers, json=body)
     if response.status_code != 200:
-        raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+        print(f"Error fetching line items: {ticker} - {response.status_code} - {response.text}")
     data = response.json()
     response_model = LineItemResponse(**data)
     search_results = response_model.search_results
+    
+    time.sleep(1)
+
     if not search_results:
         return []
 
     # Cache the results
+    _cache.set_line_items(ticker, [r.model_dump() for r in search_results])
+    save_cache()
     return search_results[:limit]
 
 
@@ -154,7 +216,7 @@ def get_insider_trades(
 
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
-            raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+            print(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
 
         data = response.json()
         response_model = InsiderTradeResponse(**data)
@@ -175,12 +237,20 @@ def get_insider_trades(
         # If we've reached or passed the start_date, we can stop
         if current_end_date <= start_date:
             break
-
+    
+    time.sleep(1)
+    
     if not all_trades:
         return []
 
+<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_insider_trades(cache_key, [trade.model_dump() for trade in all_trades])
+=======
+    # Cache the results
+    _cache.set_insider_trades(ticker, [trade.model_dump() for trade in all_trades])
+    save_cache()
+>>>>>>> line-item-cache
     return all_trades
 
 
@@ -214,7 +284,7 @@ def get_company_news(
 
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
-            raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+            print(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
 
         data = response.json()
         response_model = CompanyNewsResponse(**data)
@@ -236,11 +306,19 @@ def get_company_news(
         if current_end_date <= start_date:
             break
 
+    time.sleep(1)
+
     if not all_news:
         return []
 
+<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_company_news(cache_key, [news.model_dump() for news in all_news])
+=======
+    # Cache the results
+    _cache.set_company_news(ticker, [news.model_dump() for news in all_news])
+    save_cache()
+>>>>>>> line-item-cache
     return all_news
 
 
@@ -248,31 +326,16 @@ def get_market_cap(
     ticker: str,
     end_date: str,
 ) -> float | None:
-    """Fetch market cap from the API."""
-    # Check if end_date is today
-    if end_date == datetime.datetime.now().strftime("%Y-%m-%d"):
-        # Get the market cap from company facts API
-        headers = {}
-        if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
-            headers["X-API-KEY"] = api_key
-
-        url = f"https://api.financialdatasets.ai/company/facts/?ticker={ticker}"
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            print(f"Error fetching company facts: {ticker} - {response.status_code}")
-            return None
-
-        data = response.json()
-        response_model = CompanyFactsResponse(**data)
-        return response_model.company_facts.market_cap
-
+    """Fetch market cap; rework to stop multiple API calls"""
     financial_metrics = get_financial_metrics(ticker, end_date)
     if not financial_metrics:
+        print(f"No metrics while retrieving market cap for {ticker} on {end_date}")
         return None
 
     market_cap = financial_metrics[0].market_cap
 
     if not market_cap:
+        print(f"No market cap for {ticker} on {end_date}")
         return None
 
     return market_cap

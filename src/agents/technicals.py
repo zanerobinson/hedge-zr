@@ -103,6 +103,7 @@ def technical_analyst_agent(state: AgentState):
         )
 
         # Generate detailed analysis report for this ticker
+<<<<<<< HEAD
         technical_analysis[ticker] = {
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
@@ -134,6 +135,42 @@ def technical_analyst_agent(state: AgentState):
                 },
             },
         }
+=======
+        try:
+            technical_analysis[ticker] = {
+                "signal": combined_signal["signal"],
+                "confidence": round(combined_signal["confidence"] * 100),
+                "strategy_signals": {
+                    "trend_following": {
+                        "signal": trend_signals["signal"],
+                        "confidence": round(trend_signals["confidence"] * 100),
+                        "metrics": normalize_pandas(trend_signals["metrics"]),
+                    },
+                    "mean_reversion": {
+                        "signal": mean_reversion_signals["signal"],
+                        "confidence": round(mean_reversion_signals["confidence"] * 100),
+                        "metrics": normalize_pandas(mean_reversion_signals["metrics"]),
+                    },
+                    "momentum": {
+                        "signal": momentum_signals["signal"],
+                        "confidence": round(momentum_signals["confidence"] * 100),
+                        "metrics": normalize_pandas(momentum_signals["metrics"]),
+                    },
+                    "volatility": {
+                        "signal": volatility_signals["signal"],
+                        "confidence": round(volatility_signals["confidence"] * 100),
+                        "metrics": normalize_pandas(volatility_signals["metrics"]),
+                    },
+                    "statistical_arbitrage": {
+                        "signal": stat_arb_signals["signal"],
+                        "confidence": round(stat_arb_signals["confidence"] * 100),
+                        "metrics": normalize_pandas(stat_arb_signals["metrics"]),
+                    },
+                }
+            }
+        except ValueError:
+            print("valueerror")
+>>>>>>> line-item-cache
         progress.update_status("technical_analyst_agent", ticker, "Done", analysis=json.dumps(technical_analysis, indent=4))
 
     # Create the technical analyst message
