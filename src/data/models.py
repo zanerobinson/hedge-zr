@@ -70,9 +70,36 @@ class LineItem(BaseModel):
     report_period: str
     period: str
     currency: str
-
-    # Allow additional fields dynamically
-    model_config = {"extra": "allow"}
+    book_value_per_share: float | None
+    capital_expenditure: float | None
+    cash_and_equivalents: float | None
+    current_assets: float | None
+    current_liabilities: float | None
+    debt_to_equity: float | None
+    depreciation_and_amortization: float | None
+    dividends_and_other_cash_distributions: float | None
+    earnings_per_share: float | None
+    ebit: float | None
+    ebitda: float | None
+    free_cash_flow: float | None
+    goodwill_and_intangible_assets: float | None
+    gross_margin: float | None
+    gross_profit: float | None
+    interest_expense: float | None
+    issuance_or_purchase_of_equity_shares: float | None
+    net_income: float | None
+    operating_expense: float | None
+    operating_income: float | None
+    operating_margin: float | None
+    outstanding_shares: float | None
+    research_and_development: float | None
+    return_on_invested_capital: float | None
+    revenue: float | None
+    shareholders_equity: float | None
+    total_assets: float | None
+    total_debt: float | None
+    total_liabilities: float | None
+    working_capital: float | None
 
 
 class LineItemResponse(BaseModel):
@@ -100,12 +127,12 @@ class InsiderTradeResponse(BaseModel):
 
 
 class CompanyNews(BaseModel):
-    ticker: str
-    title: str
-    author: str
-    source: str
-    date: str
-    url: str
+    ticker: str | None = None
+    title: str | None = None
+    author: str | None = None
+    source: str | None = None
+    date: str | None = None
+    url: str | None = None
     sentiment: str | None = None
 
 

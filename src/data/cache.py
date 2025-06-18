@@ -1,3 +1,5 @@
+import pickle
+
 class Cache:
     """In-memory cache for API responses."""
 
@@ -63,9 +65,14 @@ class Cache:
 
 
 # Global cache instance
-_cache = Cache()
+with open('cache.pkl', 'rb') as f:
+    _cache = pickle.load(f)
 
 
 def get_cache() -> Cache:
     """Get the global cache instance."""
     return _cache
+
+def save_cache() -> Cache:
+    with open('cache.pkl', 'wb') as f:
+        pickle.dump(_cache, f)
