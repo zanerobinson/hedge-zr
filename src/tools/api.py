@@ -46,19 +46,16 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     price_response = PriceResponse(**response.json())
     prices = price_response.prices
 
-    time.sleep(1)
-
     if not prices:
         return []
 
-<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_prices(cache_key, [p.model_dump() for p in prices])
-=======
+
     # Cache the results as dicts
     _cache.set_prices(ticker, [p.model_dump() for p in prices])
     save_cache()
->>>>>>> line-item-cache
+
     return prices
 
 
@@ -90,19 +87,16 @@ def get_financial_metrics(
     metrics_response = FinancialMetricsResponse(**response.json())
     financial_metrics = metrics_response.financial_metrics
     
-    time.sleep(1)
-    
     if not financial_metrics:
         return []
 
-<<<<<<< HEAD
     # Cache the results as dicts using the comprehensive cache key
     _cache.set_financial_metrics(cache_key, [m.model_dump() for m in financial_metrics])
-=======
+
     # Cache the results as dicts
     _cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
     save_cache()
->>>>>>> line-item-cache
+
     return financial_metrics
 
 
@@ -168,14 +162,13 @@ def search_line_items(
         "period": period,
         "limit": limit,
     }
+    
     response = requests.post(url, headers=headers, json=body)
     if response.status_code != 200:
         print(f"Error fetching line items: {ticker} - {response.status_code} - {response.text}")
     data = response.json()
     response_model = LineItemResponse(**data)
     search_results = response_model.search_results
-    
-    time.sleep(1)
 
     if not search_results:
         return []
@@ -238,19 +231,16 @@ def get_insider_trades(
         if current_end_date <= start_date:
             break
     
-    time.sleep(1)
-    
     if not all_trades:
         return []
 
-<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_insider_trades(cache_key, [trade.model_dump() for trade in all_trades])
-=======
+
     # Cache the results
     _cache.set_insider_trades(ticker, [trade.model_dump() for trade in all_trades])
     save_cache()
->>>>>>> line-item-cache
+
     return all_trades
 
 
@@ -306,19 +296,16 @@ def get_company_news(
         if current_end_date <= start_date:
             break
 
-    time.sleep(1)
-
     if not all_news:
         return []
 
-<<<<<<< HEAD
     # Cache the results using the comprehensive cache key
     _cache.set_company_news(cache_key, [news.model_dump() for news in all_news])
-=======
+
     # Cache the results
     _cache.set_company_news(ticker, [news.model_dump() for news in all_news])
     save_cache()
->>>>>>> line-item-cache
+
     return all_news
 
 

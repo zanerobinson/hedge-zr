@@ -6,7 +6,6 @@ authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 packages = [
     { include = "src", from = "." },
-    { include = "app", from = "." }
 ]
 [tool.poetry.dependencies]
 python = "^3.11"

@@ -103,7 +103,7 @@ def technical_analyst_agent(state: AgentState):
         )
 
         # Generate detailed analysis report for this ticker
-<<<<<<< HEAD
+
         technical_analysis[ticker] = {
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
@@ -135,7 +135,7 @@ def technical_analyst_agent(state: AgentState):
                 },
             },
         }
-=======
+
         try:
             technical_analysis[ticker] = {
                 "signal": combined_signal["signal"],
@@ -170,7 +170,7 @@ def technical_analyst_agent(state: AgentState):
             }
         except ValueError:
             print("valueerror")
->>>>>>> line-item-cache
+
         progress.update_status("technical_analyst_agent", ticker, "Done", analysis=json.dumps(technical_analysis, indent=4))
 
     # Create the technical analyst message

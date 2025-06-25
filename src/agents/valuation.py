@@ -30,6 +30,7 @@ def valuation_analyst_agent(state: AgentState):
     for ticker in tickers:
         progress.update_status("valuation_analyst_agent", ticker, "Fetching financial data")
 
+
         # --- Historical financial metrics (pull 8 latest TTM snapshots for medians) ---
         financial_metrics = get_financial_metrics(
             ticker=ticker,
@@ -41,6 +42,7 @@ def valuation_analyst_agent(state: AgentState):
             progress.update_status("valuation_analyst_agent", ticker, "Failed: No financial metrics found")
             continue
         most_recent_metrics = financial_metrics[0]
+
 
         # --- Fine‑grained line‑items (need two periods to calc WC change) ---
         progress.update_status("valuation_analyst_agent", ticker, "Gathering line items")
@@ -61,6 +63,7 @@ def valuation_analyst_agent(state: AgentState):
             progress.update_status("valuation_analyst_agent", ticker, "Failed: Insufficient financial line items")
             continue
         li_curr, li_prev = line_items[0], line_items[1]
+
 
         # ------------------------------------------------------------------
         # Valuation models
