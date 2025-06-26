@@ -2,6 +2,7 @@ import datetime
 import os
 import pandas as pd
 import requests
+from tenacity import retry, wait_random_exponential
 import time
 
 from src.data.cache import get_cache, save_cache
@@ -22,7 +23,7 @@ from src.data.models import (
 # Global cache instance
 _cache = get_cache()
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
@@ -41,6 +42,8 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         print(f"Error fetching prices: {ticker} - {response.status_code} - {response.text}")
+    if response.status_code == 404:
+        return []
 
     # Parse response with Pydantic model
     price_response = PriceResponse(**response.json())
@@ -58,7 +61,7 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
 
     return prices
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_financial_metrics(
     ticker: str,
     end_date: str,
@@ -99,7 +102,7 @@ def get_financial_metrics(
 
     return financial_metrics
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def search_line_items(
     ticker: str,
     line_items_list: list[str],
@@ -178,7 +181,7 @@ def search_line_items(
     save_cache()
     return search_results[:limit]
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_insider_trades(
     ticker: str,
     end_date: str,
@@ -243,7 +246,7 @@ def get_insider_trades(
 
     return all_trades
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_company_news(
     ticker: str,
     end_date: str,
@@ -308,7 +311,7 @@ def get_company_news(
 
     return all_news
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_market_cap(
     ticker: str,
     end_date: str,
