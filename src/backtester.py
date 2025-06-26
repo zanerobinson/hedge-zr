@@ -545,7 +545,8 @@ class Backtester:
         plt.ylabel("Portfolio Value ($)")
         plt.xlabel("Date")
         plt.grid(True)
-        plt.show()
+        ticker_count = len(tickers)
+        plt.savefig(f"{ticker_count}-tickers_{start_date}-{end_date}.png", dpi=300)
 
         # Compute daily returns
         performance_df["Daily Return"] = performance_df["Portfolio Value"].pct_change().fillna(0)
