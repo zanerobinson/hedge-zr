@@ -7,6 +7,7 @@ import json
 
 from src.tools.api import get_insider_trades, get_company_news
 
+from concurrent.futures import ThreadPoolExecutor
 
 ##### Sentiment Agent #####
 def sentiment_analyst_agent(state: AgentState):
@@ -18,7 +19,7 @@ def sentiment_analyst_agent(state: AgentState):
     # Initialize sentiment analysis for each ticker
     sentiment_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("sentiment_analyst_agent", ticker, "Fetching insider trades")
 
         # Get the insider trades
@@ -115,6 +116,9 @@ def sentiment_analyst_agent(state: AgentState):
         }
 
         progress.update_status("sentiment_analyst_agent", ticker, "Done", analysis=json.dumps(reasoning, indent=4))
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
 
     # Create the sentiment message
     message = HumanMessage(

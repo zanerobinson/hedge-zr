@@ -465,7 +465,7 @@ class Backtester:
                 self._update_performance_metrics(performance_metrics)
 
         save_cache()
-        
+
         # Store the final performance metrics for reference in analyze_performance
         self.performance_metrics = performance_metrics
         return performance_metrics
@@ -549,7 +549,7 @@ class Backtester:
         plt.xlabel("Date")
         plt.grid(True)
         ticker_count = len(tickers)
-        plt.savefig(f"{ticker_count}-tickers_{start_date}-{end_date}.png", dpi=300)
+        plt.savefig(f"{ticker_count}-tickers_{self.start_date}-{self.end_date}.png", dpi=300)
 
         # Compute daily returns
         performance_df["Daily Return"] = performance_df["Portfolio Value"].pct_change().fillna(0)

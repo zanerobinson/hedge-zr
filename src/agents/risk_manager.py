@@ -4,6 +4,8 @@ from src.utils.progress import progress
 from src.tools.api import get_prices, prices_to_df
 import json
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 ##### Risk Management Agent #####
 def risk_management_agent(state: AgentState):
@@ -19,7 +21,7 @@ def risk_management_agent(state: AgentState):
     # First, fetch prices for all relevant tickers
     all_tickers = set(tickers) | set(portfolio.get("positions", {}).keys())
     
-    for ticker in all_tickers:
+    def fetch_prices(ticker):
         progress.update_status("risk_management_agent", ticker, "Fetching price data")
         
         prices = get_prices(
@@ -30,7 +32,7 @@ def risk_management_agent(state: AgentState):
 
         if not prices:
             progress.update_status("risk_management_agent", ticker, "Warning: No price data found")
-            continue
+            
 
         prices_df = prices_to_df(prices)
         
@@ -41,6 +43,9 @@ def risk_management_agent(state: AgentState):
         else:
             progress.update_status("risk_management_agent", ticker, "Warning: Empty price data")
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(fetch_prices, tickers)
+    
     # Calculate total portfolio value based on current market prices (Net Liquidation Value)
     total_portfolio_value = portfolio.get("cash", 0.0)
     
@@ -66,7 +71,7 @@ def risk_management_agent(state: AgentState):
                     "error": "Missing price data for risk calculation"
                 }
             }
-            continue
+            
             
         current_price = current_prices[ticker]
         
