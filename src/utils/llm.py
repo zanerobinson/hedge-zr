@@ -12,7 +12,7 @@ def call_llm(
     pydantic_model: type[BaseModel],
     agent_name: str | None = None,
     state: AgentState | None = None,
-    max_retries: int = 3,
+    max_retries: int = 6,
     default_factory=None,
 ) -> BaseModel:
     """
@@ -66,7 +66,7 @@ def call_llm(
 
         except Exception as e:
             if agent_name:
-                progress.update_status(agent_name, None, f"Error - retry {attempt + 1}/{max_retries}")
+                progress.update_status(agent_name, None, f"Error - {e} - retry {attempt + 1}/{max_retries}")
 
             if attempt == max_retries - 1:
                 print(f"Error in LLM call after {max_retries} attempts: {e}")
