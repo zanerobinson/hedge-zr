@@ -274,7 +274,7 @@ class Backtester:
         start_date_dt = end_date_dt - relativedelta(years=1)
         start_date_str = start_date_dt.strftime("%Y-%m-%d")
 
-        for ticker in self.tickers:
+        def prefetch_tickers(ticker):
             # Fetch price data for the entire period, plus 1 year
             get_prices(ticker, start_date_str, self.end_date)
 
@@ -288,6 +288,9 @@ class Backtester:
             get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
             
             print(f"{ticker} fetched successfully")
+
+        with ThreadPoolExecutor() as executor:
+            executor.map(prefetch_tickers, tickers)
 
         print("Data pre-fetch complete.")
 
