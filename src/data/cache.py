@@ -65,9 +65,9 @@ class Cache:
 
 
 # Global cache instance
-with open('cache.pkl', 'rb') as f:
-    _cache = pickle.load(f)
-
+#with open('cache.pkl', 'rb') as f:
+#    _cache = pickle.load(f)
+_cache = Cache()
 
 def get_cache() -> Cache:
     """Get the global cache instance."""

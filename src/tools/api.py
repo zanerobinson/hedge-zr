@@ -5,7 +5,7 @@ import requests
 from tenacity import retry, wait_random_exponential
 import time
 
-from src.data.cache import get_cache, save_cache
+from src.data.cache import get_cache
 from src.data.models import (
     CompanyNews,
     CompanyNewsResponse,
@@ -57,7 +57,6 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
 
     # Cache the results as dicts
     _cache.set_prices(ticker, [p.model_dump() for p in prices])
-    save_cache()
 
     return prices
 
@@ -98,7 +97,6 @@ def get_financial_metrics(
 
     # Cache the results as dicts
     _cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
-    save_cache()
 
     return financial_metrics
 
@@ -178,7 +176,7 @@ def search_line_items(
 
     # Cache the results
     _cache.set_line_items(ticker, [r.model_dump() for r in search_results])
-    save_cache()
+
     return search_results[:limit]
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60))
@@ -242,7 +240,6 @@ def get_insider_trades(
 
     # Cache the results
     _cache.set_insider_trades(ticker, [trade.model_dump() for trade in all_trades])
-    save_cache()
 
     return all_trades
 
@@ -307,7 +304,6 @@ def get_company_news(
 
     # Cache the results
     _cache.set_company_news(ticker, [news.model_dump() for news in all_news])
-    save_cache()
 
     return all_news
 

@@ -21,6 +21,7 @@ from src.tools.api import (
     get_financial_metrics,
     get_insider_trades,
 )
+from src.data.cache import save_cache
 from src.utils.display import print_backtest_results, format_backtest_row
 from typing_extensions import Callable
 from src.utils.ollama import ensure_ollama_and_model
@@ -463,6 +464,8 @@ class Backtester:
             if len(self.portfolio_values) > 3:
                 self._update_performance_metrics(performance_metrics)
 
+        save_cache()
+
         # Store the final performance metrics for reference in analyze_performance
         self.performance_metrics = performance_metrics
         return performance_metrics
@@ -546,7 +549,7 @@ class Backtester:
         plt.xlabel("Date")
         plt.grid(True)
         ticker_count = len(tickers)
-        plt.savefig(f"{ticker_count}-tickers_{start_date}-{end_date}.png", dpi=300)
+        plt.savefig(f"{ticker_count}-tickers_{self.start_date}-{self.end_date}.png", dpi=300)
 
         # Compute daily returns
         performance_df["Daily Return"] = performance_df["Portfolio Value"].pct_change().fillna(0)

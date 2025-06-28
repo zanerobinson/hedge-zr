@@ -18,6 +18,8 @@ from src.tools.api import (
     search_line_items,
 )
 
+from concurrent.futures import ThreadPoolExecutor
+
 def valuation_analyst_agent(state: AgentState):
     """Run valuation across tickers and write signals back to `state`."""
 
@@ -27,7 +29,7 @@ def valuation_analyst_agent(state: AgentState):
 
     valuation_analysis: dict[str, dict] = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("valuation_analyst_agent", ticker, "Fetching financial data")
 
 
@@ -40,7 +42,7 @@ def valuation_analyst_agent(state: AgentState):
         )
         if not financial_metrics:
             progress.update_status("valuation_analyst_agent", ticker, "Failed: No financial metrics found")
-            continue
+            
         most_recent_metrics = financial_metrics[0]
 
 
@@ -61,7 +63,7 @@ def valuation_analyst_agent(state: AgentState):
         )
         if len(line_items) < 2:
             progress.update_status("valuation_analyst_agent", ticker, "Failed: Insufficient financial line items")
-            continue
+            
         li_curr, li_prev = line_items[0], line_items[1]
 
 
@@ -105,7 +107,7 @@ def valuation_analyst_agent(state: AgentState):
         market_cap = get_market_cap(ticker, end_date)
         if not market_cap:
             progress.update_status("valuation_analyst_agent", ticker, "Failed: Market cap unavailable")
-            continue
+            
 
         method_values = {
             "dcf": {"value": dcf_val, "weight": 0.35},
@@ -117,7 +119,7 @@ def valuation_analyst_agent(state: AgentState):
         total_weight = sum(v["weight"] for v in method_values.values() if v["value"] > 0)
         if total_weight == 0:
             progress.update_status("valuation_analyst_agent", ticker, "Failed: All valuation methods zero")
-            continue
+            
 
         for v in method_values.values():
             v["gap"] = (v["value"] - market_cap) / market_cap if v["value"] > 0 else None
@@ -149,6 +151,9 @@ def valuation_analyst_agent(state: AgentState):
             "reasoning": reasoning,
         }
         progress.update_status("valuation_analyst_agent", ticker, "Done", analysis=json.dumps(reasoning, indent=4))
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
 
     # ---- Emit message (for LLM tool chain) ----
     msg = HumanMessage(content=json.dumps(valuation_analysis), name="valuation_analyst_agent")

@@ -11,6 +11,7 @@ import numpy as np
 from src.tools.api import get_prices, prices_to_df
 from src.utils.progress import progress
 
+from concurrent.futures import ThreadPoolExecutor
 
 def safe_float(value, default=0.0):
     """
@@ -49,7 +50,7 @@ def technical_analyst_agent(state: AgentState):
     # Initialize analysis for each ticker
     technical_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("technical_analyst_agent", ticker, "Analyzing price data")
 
         # Get the historical price data
@@ -61,7 +62,7 @@ def technical_analyst_agent(state: AgentState):
 
         if not prices:
             progress.update_status("technical_analyst_agent", ticker, "Failed: No price data found")
-            continue
+            
 
         # Convert prices to a DataFrame
         prices_df = prices_to_df(prices)
@@ -173,6 +174,9 @@ def technical_analyst_agent(state: AgentState):
 
         progress.update_status("technical_analyst_agent", ticker, "Done", analysis=json.dumps(technical_analysis, indent=4))
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+    
     # Create the technical analyst message
     message = HumanMessage(
         content=json.dumps(technical_analysis),

@@ -5,6 +5,8 @@ import json
 
 from src.tools.api import get_financial_metrics
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 ##### Fundamental Agent #####
 def fundamentals_analyst_agent(state: AgentState):
@@ -16,7 +18,7 @@ def fundamentals_analyst_agent(state: AgentState):
     # Initialize fundamental analysis for each ticker
     fundamental_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("fundamentals_analyst_agent", ticker, "Fetching financial metrics")
 
         # Get the financial metrics
@@ -29,7 +31,6 @@ def fundamentals_analyst_agent(state: AgentState):
 
         if not financial_metrics:
             progress.update_status("fundamentals_analyst_agent", ticker, "Failed: No financial metrics found")
-            continue
 
         # Pull the most recent financial metrics
         metrics = financial_metrics[0]
@@ -139,6 +140,9 @@ def fundamentals_analyst_agent(state: AgentState):
         }
 
         progress.update_status("fundamentals_analyst_agent", ticker, "Done", analysis=json.dumps(reasoning, indent=4))
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
 
     # Create the fundamental analysis message
     message = HumanMessage(
