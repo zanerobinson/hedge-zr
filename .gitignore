@@ -40,16 +40,12 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# graph
+# Performance graph
 *.png
-
-# Txt files
-*.txt
-
-# PDF files
-*.pdf
 
 # Frontend
 node_modules
 
+*.txt
+*.pdf
 *.pkl
