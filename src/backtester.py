@@ -26,6 +26,8 @@ from src.utils.display import print_backtest_results, format_backtest_row
 from typing_extensions import Callable
 from src.utils.ollama import ensure_ollama_and_model
 
+from concurrent.futures import ThreadPoolExecutor
+
 init(autoreset=True)
 
 
