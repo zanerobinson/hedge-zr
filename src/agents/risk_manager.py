@@ -19,31 +19,31 @@ def risk_management_agent(state: AgentState):
     # Initialize risk analysis for each ticker
     risk_analysis = {}
     current_prices = Cache(maxsize=0)  # Store prices here to avoid redundant API calls
-    
-    def fetch_prices(zicker):
-        progress.update_status("risk_management_agent", zicker, "Fetching price data")
+
+    def fetch_prices(ticker):
+        progress.update_status("risk_management_agent", ticker, "Fetching price data")
         
         prices = get_prices(
-            ticker=zicker,
+            ticker=ticker,
             start_date=data["start_date"],
             end_date=data["end_date"],
         )
 
         if not prices:
-            progress.update_status("risk_management_agent", zicker, "Warning: No price data found")
-        print("pre")
+            progress.update_status("risk_management_agent", ticker, "Warning: No price data found")
+
         prices_df = prices_to_df(prices)
-        print("post")
+
         if not prices_df.empty:
             current_price = prices_df["close"].iloc[-1]
-            current_prices.insert(zicker, current_price)
-            progress.update_status("risk_management_agent", zicker, f"Current price: {current_price}")
+            current_prices.insert(ticker, current_price)
+            progress.update_status("risk_management_agent", ticker, f"Current price: {current_price}")
         else:
-            progress.update_status("risk_management_agent", zicker, "Warning: Empty price data")
+            progress.update_status("risk_management_agent", ticker, "Warning: Empty price data")
 
     with ThreadPoolExecutor() as executor:
         executor.map(fetch_prices, tickers)
-    
+
     # Calculate total portfolio value based on current market prices (Net Liquidation Value)
     total_portfolio_value = portfolio.get("cash", 0.0)
     
@@ -69,7 +69,6 @@ def risk_management_agent(state: AgentState):
                     "error": "Missing price data for risk calculation"
                 }
             }
-            
             
         current_price = current_prices[ticker]
         

@@ -31,7 +31,7 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     cache_key = f"{ticker}_prices_{start_date}_{end_date}"
 
     if cache_key in _cache:
-        return [Price(**price) for price in _cache[f"{cache_key}"]]
+        return _cache[f"{cache_key}"]
 
     # If not in cache, fetch from API
     headers = {}
