@@ -65,7 +65,7 @@ class FinancialMetricsResponse(BaseModel):
     financial_metrics: list[FinancialMetrics]
 
 
-class LineItem(BaseModel):
+class LineItems(BaseModel):
     ticker: str
     report_period: str
     period: str
@@ -102,8 +102,8 @@ class LineItem(BaseModel):
     working_capital: float | None
 
 
-class LineItemResponse(BaseModel):
-    search_results: list[LineItem]
+class LineItemsResponse(BaseModel):
+    search_results: list[LineItems]
 
 
 class InsiderTrade(BaseModel):

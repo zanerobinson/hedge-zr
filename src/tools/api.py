@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import requests
 from tenacity import retry, wait_random_exponential
+from cachebox import Cache
 import time
 
 from src.data.cache import get_cache
@@ -13,8 +14,8 @@ from src.data.models import (
     FinancialMetricsResponse,
     Price,
     PriceResponse,
-    LineItem,
-    LineItemResponse,
+    LineItems,
+    LineItemsResponse,
     InsiderTrade,
     InsiderTradeResponse,
     CompanyFactsResponse,
@@ -27,11 +28,10 @@ _cache = get_cache()
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
-    cache_key = f"{ticker}_{start_date}_{end_date}"
+    cache_key = f"{ticker}_prices_{start_date}_{end_date}"
     
-    # Check cache first - simple exact match
-    if cached_data := _cache.get_prices(cache_key):
-        return [Price(**price) for price in cached_data]
+    if cache_key in _cache:
+        return [Price(**price) for price in _cache[f"{cache_key}"]]
 
     # If not in cache, fetch from API
     headers = {}
@@ -53,12 +53,10 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
         return []
 
     # Cache the results using the comprehensive cache key
-    _cache.set_prices(cache_key, [p.model_dump() for p in prices])
-
-    # Cache the results as dicts
-    _cache.set_prices(ticker, [p.model_dump() for p in prices])
+    _cache.insert(cache_key, prices)
 
     return prices
+
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_financial_metrics(
@@ -69,11 +67,11 @@ def get_financial_metrics(
 ) -> list[FinancialMetrics]:
     """Fetch financial metrics from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
-    cache_key = f"{ticker}_{period}_{end_date}_{limit}"
+    cache_key = f"{ticker}_metrics_{period}_{end_date}_{limit}"
     
     # Check cache first - simple exact match
-    if cached_data := _cache.get_financial_metrics(cache_key):
-        return [FinancialMetrics(**metric) for metric in cached_data]
+    if cache_key in _cache:
+        return [FinancialMetrics(**metric) for metric in _cache[f"{cache_key}"]]
 
     # If not in cache, fetch from API
     headers = {}
@@ -89,48 +87,41 @@ def get_financial_metrics(
     metrics_response = FinancialMetricsResponse(**response.json())
     financial_metrics = metrics_response.financial_metrics
     
+    '''del after
+    '''
+    
     with open('cache.txt', 'a') as f:
         for line in financial_metrics:
             f.write(f"FinancialMetrics - {line}\n")
-
+    
+    '''del before
+    '''
+    
     if not financial_metrics:
         return []
 
-    # Cache the results as dicts using the comprehensive cache key
-    _cache.set_financial_metrics(cache_key, [m.model_dump() for m in financial_metrics])
-
-    # Cache the results as dicts
-    #_cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
+    # Cache the results using the comprehensive cache key
+    _cache.insert(cache_key, financial_metrics)
 
     return financial_metrics
 
-@retry(wait=wait_random_exponential(multiplier=1, max=60))
+
+retry(wait=wait_random_exponential(multiplier=1, max=60))
 def search_line_items(
     ticker: str,
     line_items_list: list[str],
     end_date: str,
     period: str = "ttm",
     limit: int = 10,
-) -> list[LineItem]:    
+) -> list[LineItems]:    
     # Create a cache key that includes all parameters to ensure exact matches
     cache_key = f"{ticker}_line-items_{period}_{end_date}"
     
     # Check cache first - simple exact match
-    if cached_data := _cache.get_line_items(cache_key):
-        return [LineItem(**item) for item in cached_data]
+    if cache_key in _cache:
+        return [LineItems(**item) for item in _cache[f"{cache_key}"]]
 
-    """Fetch line items from API."""
-    
-    '''
-    if cached_data := _cache.get_line_items(ticker):
-        # Filter cached data by date and limit
-        filtered_data = [LineItem(**item) for item in cached_data if item["report_period"] <= end_date]
-        filtered_data.sort(key=lambda x: x.report_period, reverse=True)
-        if filtered_data:
-            return filtered_data[:limit]
-    '''
-    
-    # If not in cache or insufficient data, fetch from API
+    # If not in cache, fetch from API
     headers = {}
     if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
         headers["X-API-KEY"] = api_key
@@ -177,28 +168,20 @@ def search_line_items(
         "period": period,
         "limit": limit,
     }
+
+    print("Hello")
     
     response = requests.post(url, headers=headers, json=body)
     if response.status_code != 200:
         print(f"Error fetching line items: {ticker} - {response.status_code} - {response.text}")
-    data = response.json()
-    response_model = LineItemResponse(**data)
-    search_results = response_model.search_results
-    
-    with open('cache.txt', 'a') as f:
-        for line in search_results:
-            f.write(f"LineItem - {line}\n")
-
-    if not search_results:
-        return []
+    items_response = LineItemsResponse(**response.json())
+    search_results = items_response.search_results
 
     # Cache the results as dicts using the comprehensive cache key
-    _cache.set_line_items(cache_key, [r.model_dump() for r in search_results])
-
-    # Cache the results
-    #_cache.set_line_items(ticker, [r.model_dump() for r in search_results])
+    _cache.insert(cache_key, search_results)
 
     return search_results
+
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_insider_trades(
@@ -209,11 +192,11 @@ def get_insider_trades(
 ) -> list[InsiderTrade]:
     """Fetch insider trades from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
-    cache_key = f"{ticker}_{start_date or 'none'}_{end_date}_{limit}"
+    cache_key = f"{ticker}_insider-trades_{start_date or 'none'}_{end_date}_{limit}"
     
     # Check cache first - simple exact match
-    if cached_data := _cache.get_insider_trades(cache_key):
-        return [InsiderTrade(**trade) for trade in cached_data]
+    if cache_key in _cache:
+        return [InsiderTrade(**trade) for trade in  _cache[f"{cache_key}"]]
 
     # If not in cache, fetch from API
     headers = {}
@@ -257,10 +240,7 @@ def get_insider_trades(
         return []
 
     # Cache the results using the comprehensive cache key
-    _cache.set_insider_trades(cache_key, [trade.model_dump() for trade in all_trades])
-
-    # Cache the results
-    _cache.set_insider_trades(ticker, [trade.model_dump() for trade in all_trades])
+    _cache.insert(cache_key, all_trades)
 
     return all_trades
 
@@ -273,11 +253,11 @@ def get_company_news(
 ) -> list[CompanyNews]:
     """Fetch company news from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
-    cache_key = f"{ticker}_{start_date or 'none'}_{end_date}_{limit}"
+    cache_key = f"{ticker}_company-news_{start_date or 'none'}_{end_date}_{limit}"
     
     # Check cache first - simple exact match
-    if cached_data := _cache.get_company_news(cache_key):
-        return [CompanyNews(**news) for news in cached_data]
+    if cache_key in _cache:
+        return [CompanyNews(**news) for news in _cache[f"{cache_key}"]]
 
     # If not in cache, fetch from API
     headers = {}
@@ -321,12 +301,10 @@ def get_company_news(
         return []
 
     # Cache the results using the comprehensive cache key
-    _cache.set_company_news(cache_key, [news.model_dump() for news in all_news])
-
-    # Cache the results
-    _cache.set_company_news(ticker, [news.model_dump() for news in all_news])
+    _cache.insert(cache_key, all_news)
 
     return all_news
+
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_market_cap(
@@ -334,16 +312,31 @@ def get_market_cap(
     end_date: str,
 ) -> float | None:
     """Fetch market cap; rework to stop multiple API calls"""
-    financial_metrics = get_financial_metrics(ticker, end_date)
-    if not financial_metrics:
-        print(f"No metrics while retrieving market cap for {ticker} on {end_date}")
-        return None
+    cache_key = f"{ticker}_metrics_ttm_{end_date}_10"
 
+    if cache_key in _cache:
+        return float([FinancialMetrics(**metric)[0].market_cap for metric in _cache[f"{cache_key}"]][0])
+
+    # If not in cache, fetch from API
+    headers = {}
+    if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
+        headers["X-API-KEY"] = api_key
+
+    url = f"https://api.financialdatasets.ai/financial-metrics/?ticker={ticker}&report_period_lte={end_date}&limit=1&period=ttm"
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print(f"Error fetching market cap: {ticker} - {response.status_code} - {response.text}")
+
+    # Parse response with Pydantic model
+    metrics_response = FinancialMetricsResponse(**response.json())
+    financial_metrics = metrics_response.financial_metrics
     market_cap = financial_metrics[0].market_cap
-
+    
     if not market_cap:
-        print(f"No market cap for {ticker} on {end_date}")
-        return None
+        return []
+
+    # Cache the results using the comprehensive cache key
+    _cache.insert(cache_key, financial_metrics)
 
     return market_cap
 
