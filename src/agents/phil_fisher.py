@@ -15,6 +15,7 @@ from src.utils.progress import progress
 from src.utils.llm import call_llm
 import statistics
 
+from concurrent.futures import ThreadPoolExecutor
 
 class PhilFisherSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -41,7 +42,7 @@ def phil_fisher_agent(state: AgentState):
     analysis_data = {}
     fisher_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("phil_fisher_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=5)
 
@@ -138,10 +139,14 @@ def phil_fisher_agent(state: AgentState):
             "sentiment_analysis": sentiment_analysis,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("phil_fisher_agent", ticker, "Generating Phil Fisher-style analysis")
         fisher_output = generate_fisher_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

@@ -8,6 +8,8 @@ from src.tools.api import get_financial_metrics, get_market_cap, search_line_ite
 from src.utils.llm import call_llm
 from src.utils.progress import progress
 
+from concurrent.futures import ThreadPoolExecutor
+
 class RakeshJhunjhunwalaSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
     confidence: float
@@ -23,8 +25,7 @@ def rakesh_jhunjhunwala_agent(state: AgentState):
     analysis_data = {}
     jhunjhunwala_analysis = {}
 
-    for ticker in tickers:
-
+    def process_tickers(ticker):
         # Core Data
         progress.update_status("rakesh_jhunjhunwala_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="ttm", limit=5)
@@ -132,6 +133,10 @@ def rakesh_jhunjhunwala_agent(state: AgentState):
             "market_cap": market_cap,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         # ─── LLM: craft Jhunjhunwala‑style narrative ──────────────────────────────
         progress.update_status("rakesh_jhunjhunwala_agent", ticker, "Generating Jhunjhunwala analysis")
         jhunjhunwala_output = generate_jhunjhunwala_output(

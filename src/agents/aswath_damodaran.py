@@ -16,6 +16,8 @@ from src.tools.api import (
 from src.utils.llm import call_llm
 from src.utils.progress import progress
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 class AswathDamodaranSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -39,7 +41,7 @@ def aswath_damodaran_agent(state: AgentState):
     analysis_data: dict[str, dict] = {}
     damodaran_signals: dict[str, dict] = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         # ─── Fetch core data ────────────────────────────────────────────────────
         progress.update_status("aswath_damodaran_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="ttm", limit=5)
@@ -111,11 +113,15 @@ def aswath_damodaran_agent(state: AgentState):
             "market_cap": market_cap,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         # ─── LLM: craft Damodaran-style narrative ──────────────────────────────
         progress.update_status("aswath_damodaran_agent", ticker, "Generating Damodaran analysis")
         damodaran_output = generate_damodaran_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

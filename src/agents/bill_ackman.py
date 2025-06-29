@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
+from concurrent.futures import ThreadPoolExecutor
 
 class BillAckmanSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -29,7 +30,7 @@ def bill_ackman_agent(state: AgentState):
     analysis_data = {}
     ackman_analysis = {}
     
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("bill_ackman_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=5)
         
@@ -95,11 +96,15 @@ def bill_ackman_agent(state: AgentState):
             "activism_analysis": activism_analysis,
             "valuation_analysis": valuation_analysis
         }
-        
+    
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("bill_ackman_agent", ticker, "Generating Bill Ackman analysis")
         ackman_output = generate_ackman_output(
             ticker=ticker, 
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
         

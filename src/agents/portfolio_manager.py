@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
+from concurrent.futures import ThreadPoolExecutor
 
 class PortfolioDecision(BaseModel):
     action: Literal["buy", "sell", "short", "cover", "hold"]
@@ -34,7 +35,8 @@ def portfolio_management_agent(state: AgentState):
     current_prices = {}
     max_shares = {}
     signals_by_ticker = {}
-    for ticker in tickers:
+
+    def process_tickers(ticker):
         progress.update_status("portfolio_manager", ticker, "Processing analyst signals")
 
         # Get position limits and current prices for the ticker
@@ -55,6 +57,9 @@ def portfolio_management_agent(state: AgentState):
                 ticker_signals[agent] = {"signal": signals[ticker]["signal"], "confidence": signals[ticker]["confidence"]}
         signals_by_ticker[ticker] = ticker_signals
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+        
     progress.update_status("portfolio_manager", None, "Generating trading decisions")
 
     # Generate the trading decision

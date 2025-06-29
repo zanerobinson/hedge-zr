@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
+from concurrent.futures import ThreadPoolExecutor
 
 class CathieWoodSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -30,7 +31,7 @@ def cathie_wood_agent(state: AgentState):
     analysis_data = {}
     cw_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("cathie_wood_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=5)
 
@@ -82,10 +83,14 @@ def cathie_wood_agent(state: AgentState):
 
         analysis_data[ticker] = {"signal": signal, "score": total_score, "max_score": max_possible_score, "disruptive_analysis": disruptive_analysis, "innovation_analysis": innovation_analysis, "valuation_analysis": valuation_analysis}
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("cathie_wood_agent", ticker, "Generating Cathie Wood analysis")
         cw_output = generate_cathie_wood_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

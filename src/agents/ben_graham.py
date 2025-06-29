@@ -9,6 +9,7 @@ from src.utils.progress import progress
 from src.utils.llm import call_llm
 import math
 
+from concurrent.futures import ThreadPoolExecutor
 
 class BenGrahamSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -31,7 +32,7 @@ def ben_graham_agent(state: AgentState):
     analysis_data = {}
     graham_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("ben_graham_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=10)
 
@@ -65,10 +66,14 @@ def ben_graham_agent(state: AgentState):
 
         analysis_data[ticker] = {"signal": signal, "score": total_score, "max_score": max_possible_score, "earnings_analysis": earnings_analysis, "strength_analysis": strength_analysis, "valuation_analysis": valuation_analysis}
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("ben_graham_agent", ticker, "Generating Ben Graham analysis")
         graham_output = generate_graham_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

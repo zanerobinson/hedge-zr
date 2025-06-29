@@ -8,12 +8,13 @@ from src.tools.api import get_financial_metrics, get_market_cap, search_line_ite
 from src.utils.llm import call_llm
 from src.utils.progress import progress
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 class WarrenBuffettSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
     confidence: float
     reasoning: str
-
 
 def warren_buffett_agent(state: AgentState):
     """Analyzes stocks using Buffett's principles and LLM reasoning."""
@@ -25,7 +26,7 @@ def warren_buffett_agent(state: AgentState):
     analysis_data = {}
     buffett_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("warren_buffett_agent", ticker, "Fetching financial metrics")
         # Fetch required data - request more periods for better trend analysis
         metrics = get_financial_metrics(ticker, end_date, period="ttm", limit=10)
@@ -119,10 +120,14 @@ def warren_buffett_agent(state: AgentState):
             "margin_of_safety": margin_of_safety,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("warren_buffett_agent", ticker, "Generating Warren Buffett analysis")
         buffett_output = generate_buffett_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

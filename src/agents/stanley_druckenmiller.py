@@ -16,6 +16,7 @@ from src.utils.progress import progress
 from src.utils.llm import call_llm
 import statistics
 
+from concurrent.futures import ThreadPoolExecutor
 
 class StanleyDruckenmillerSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
@@ -41,7 +42,7 @@ def stanley_druckenmiller_agent(state: AgentState):
     analysis_data = {}
     druck_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("stanley_druckenmiller_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=5)
 
@@ -133,10 +134,14 @@ def stanley_druckenmiller_agent(state: AgentState):
             "valuation_analysis": valuation_analysis,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("stanley_druckenmiller_agent", ticker, "Generating Stanley Druckenmiller analysis")
         druck_output = generate_druckenmiller_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

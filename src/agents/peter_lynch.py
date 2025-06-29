@@ -15,6 +15,7 @@ from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
+from concurrent.futures import ThreadPoolExecutor
 
 class PeterLynchSignal(BaseModel):
     """
@@ -48,7 +49,7 @@ def peter_lynch_agent(state: AgentState):
     analysis_data = {}
     lynch_analysis = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("peter_lynch_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=5)
 
@@ -135,6 +136,10 @@ def peter_lynch_agent(state: AgentState):
             "insider_activity": insider_activity,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("peter_lynch_agent", ticker, "Generating Peter Lynch analysis")
         lynch_output = generate_lynch_output(
             ticker=ticker,

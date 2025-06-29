@@ -19,6 +19,8 @@ from src.tools.api import (
 from src.utils.llm import call_llm
 from src.utils.progress import progress
 
+from concurrent.futures import ThreadPoolExecutor
+
 __all__ = [
     "MichaelBurrySignal",
     "michael_burry_agent",
@@ -55,7 +57,7 @@ def michael_burry_agent(state: AgentState):  # noqa: C901  (complexity is fine h
     analysis_data: dict[str, dict] = {}
     burry_analysis: dict[str, dict] = {}
 
-    for ticker in tickers:
+    def process_tickers(ticker):
         # ------------------------------------------------------------------
         # Fetch raw data
         # ------------------------------------------------------------------
@@ -139,10 +141,14 @@ def michael_burry_agent(state: AgentState):  # noqa: C901  (complexity is fine h
             "market_cap": market_cap,
         }
 
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("michael_burry_agent", ticker, "Generating LLM output")
         burry_output = _generate_burry_output(
             ticker=ticker,
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
 

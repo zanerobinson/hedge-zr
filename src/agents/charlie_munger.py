@@ -8,6 +8,8 @@ from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
+from concurrent.futures import ThreadPoolExecutor
+
 class CharlieMungerSignal(BaseModel):
     signal: Literal["bullish", "bearish", "neutral"]
     confidence: float
@@ -26,7 +28,7 @@ def charlie_munger_agent(state: AgentState):
     analysis_data = {}
     munger_analysis = {}
     
-    for ticker in tickers:
+    def process_tickers(ticker):
         progress.update_status("charlie_munger_agent", ticker, "Fetching financial metrics")
         metrics = get_financial_metrics(ticker, end_date, period="annual", limit=10)  # Munger looks at longer periods
         
@@ -119,11 +121,15 @@ def charlie_munger_agent(state: AgentState):
             # Include some qualitative assessment from news
             "news_sentiment": analyze_news_sentiment(company_news) if company_news else "No news data available"
         }
-        
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_tickers, tickers)
+
+    for ticker in tickers:
         progress.update_status("charlie_munger_agent", ticker, "Generating Charlie Munger analysis")
         munger_output = generate_munger_output(
             ticker=ticker, 
-            analysis_data=analysis_data,
+            analysis_data=analysis_data[ticker],
             state=state,
         )
         
