@@ -104,10 +104,10 @@ def valuation_analyst_agent(state: AgentState):
         # ------------------------------------------------------------------
         # Aggregate & signal
         # ------------------------------------------------------------------
-        market_cap = get_market_cap(ticker, end_date)
+
+        market_cap = li_curr.market_cap
         if not market_cap:
             progress.update_status("valuation_analyst_agent", ticker, "Failed: Market cap unavailable")
-            
 
         method_values = {
             "dcf": {"value": dcf_val, "weight": 0.35},

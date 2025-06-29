@@ -21,27 +21,27 @@ def risk_management_agent(state: AgentState):
     # First, fetch prices for all relevant tickers
     all_tickers = set(tickers) | set(portfolio.get("positions", {}).keys())
     
-    def fetch_prices(ticker):
-        progress.update_status("risk_management_agent", ticker, "Fetching price data")
+    def fetch_prices(_ticker):
+        progress.update_status("risk_management_agent", _ticker, "Fetching price data")
         
         prices = get_prices(
-            ticker=ticker,
+            ticker=_ticker,
             start_date=data["start_date"],
             end_date=data["end_date"],
         )
 
         if not prices:
-            progress.update_status("risk_management_agent", ticker, "Warning: No price data found")
+            progress.update_status("risk_management_agent", _ticker, "Warning: No price data found")
             
 
         prices_df = prices_to_df(prices)
         
         if not prices_df.empty:
             current_price = prices_df["close"].iloc[-1]
-            current_prices[ticker] = current_price
-            progress.update_status("risk_management_agent", ticker, f"Current price: {current_price}")
+            current_prices[_ticker] = current_price
+            progress.update_status("risk_management_agent", _ticker, f"Current price: {current_price}")
         else:
-            progress.update_status("risk_management_agent", ticker, "Warning: Empty price data")
+            progress.update_status("risk_management_agent", _ticker, "Warning: Empty price data")
 
     with ThreadPoolExecutor() as executor:
         executor.map(fetch_prices, tickers)
