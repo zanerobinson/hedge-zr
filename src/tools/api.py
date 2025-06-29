@@ -237,7 +237,7 @@ def get_company_news(
     ticker: str,
     end_date: str,
     start_date: str | None = None,
-    limit: int = 1000,
+    limit: int = 100,
 ) -> list[CompanyNews]:
     """Fetch company news from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
