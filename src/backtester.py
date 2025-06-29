@@ -267,39 +267,8 @@ class Backtester:
 
         return total_value
 
-    def prefetch_data(self):
-        """Pre-fetch all data needed for the backtest period."""
-        print("\nPre-fetching data for the entire backtest period...")
-
-        # Convert end_date string to datetime, fetch up to 1 year before
-        end_date_dt = datetime.strptime(self.end_date, "%Y-%m-%d")
-        start_date_dt = end_date_dt - relativedelta(years=1)
-        start_date_str = start_date_dt.strftime("%Y-%m-%d")
-
-        def prefetch_tickers(ticker):
-            # Fetch price data for the entire period, plus 1 year
-            get_prices(ticker, start_date_str, self.end_date)
-
-            # Fetch financial metrics
-            get_financial_metrics(ticker, self.end_date, limit=10)
-
-            # Fetch insider trades
-            get_insider_trades(ticker, self.end_date, start_date=self.start_date, limit=1000)
-
-            # Fetch company news
-            get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
-            
-            print(f"{ticker} fetched successfully")
-
-        with ThreadPoolExecutor() as executor:
-            executor.map(prefetch_tickers, tickers)
-
-        print("Data pre-fetch complete.")
 
     def run_backtest(self):
-        # Pre-fetch all data at the start
-        self.prefetch_data()
-
         dates = pd.date_range(self.start_date, self.end_date, freq="B")
         table_rows = []
         performance_metrics = {"sharpe_ratio": None, "sortino_ratio": None, "max_drawdown": None, "long_short_ratio": None, "gross_exposure": None, "net_exposure": None}
