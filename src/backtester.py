@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import questionary
 
-import matplotlib.pyplot as plt
 import pandas as pd
 from colorama import Fore, Style, init
 import numpy as np
@@ -515,6 +514,8 @@ class Backtester:
         total_realized_gains = sum(self.portfolio["realized_gains"][ticker]["long"] + self.portfolio["realized_gains"][ticker]["short"] for ticker in self.tickers)
         print(f"Total Realized Gains/Losses: {Fore.GREEN if total_realized_gains >= 0 else Fore.RED}${total_realized_gains:,.2f}{Style.RESET_ALL}")
 
+        import matplotlib.pyplot as plt
+        
         # Plot the portfolio value over time
         plt.figure(figsize=(12, 6))
         plt.plot(performance_df.index, performance_df["Portfolio Value"], color="blue")

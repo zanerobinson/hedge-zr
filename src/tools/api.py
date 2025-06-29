@@ -24,12 +24,12 @@ from src.data.models import (
 # Global cache instance
 _cache = get_cache()
 
-@retry(wait=wait_random_exponential(multiplier=1, max=60))
+#@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
     cache_key = f"{ticker}_prices_{start_date}_{end_date}"
-    
+
     if cache_key in _cache:
         return [Price(**price) for price in _cache[f"{cache_key}"]]
 

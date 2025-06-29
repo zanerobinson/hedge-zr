@@ -4,6 +4,8 @@ from src.utils.progress import progress
 from src.tools.api import get_prices, prices_to_df
 import json
 
+from cachebox import Cache
+
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -16,32 +18,28 @@ def risk_management_agent(state: AgentState):
 
     # Initialize risk analysis for each ticker
     risk_analysis = {}
-    current_prices = {}  # Store prices here to avoid redundant API calls
-
-    # First, fetch prices for all relevant tickers
-    all_tickers = set(tickers) | set(portfolio.get("positions", {}).keys())
+    current_prices = Cache(maxsize=0)  # Store prices here to avoid redundant API calls
     
-    def fetch_prices(_ticker):
-        progress.update_status("risk_management_agent", _ticker, "Fetching price data")
+    def fetch_prices(zicker):
+        progress.update_status("risk_management_agent", zicker, "Fetching price data")
         
         prices = get_prices(
-            ticker=_ticker,
+            ticker=zicker,
             start_date=data["start_date"],
             end_date=data["end_date"],
         )
 
         if not prices:
-            progress.update_status("risk_management_agent", _ticker, "Warning: No price data found")
-            
-
+            progress.update_status("risk_management_agent", zicker, "Warning: No price data found")
+        print("pre")
         prices_df = prices_to_df(prices)
-        
+        print("post")
         if not prices_df.empty:
             current_price = prices_df["close"].iloc[-1]
-            current_prices[_ticker] = current_price
-            progress.update_status("risk_management_agent", _ticker, f"Current price: {current_price}")
+            current_prices.insert(zicker, current_price)
+            progress.update_status("risk_management_agent", zicker, f"Current price: {current_price}")
         else:
-            progress.update_status("risk_management_agent", _ticker, "Warning: Empty price data")
+            progress.update_status("risk_management_agent", zicker, "Warning: Empty price data")
 
     with ThreadPoolExecutor() as executor:
         executor.map(fetch_prices, tickers)
