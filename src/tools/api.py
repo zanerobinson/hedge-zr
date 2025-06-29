@@ -89,6 +89,10 @@ def get_financial_metrics(
     metrics_response = FinancialMetricsResponse(**response.json())
     financial_metrics = metrics_response.financial_metrics
     
+    with open('cache.txt', 'a') as f:
+        for line in financial_metrics:
+            f.write(f"FinancialMetrics - {line}\n")
+
     if not financial_metrics:
         return []
 
@@ -96,7 +100,7 @@ def get_financial_metrics(
     _cache.set_financial_metrics(cache_key, [m.model_dump() for m in financial_metrics])
 
     # Cache the results as dicts
-    _cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
+    #_cache.set_financial_metrics(ticker, [m.model_dump() for m in financial_metrics])
 
     return financial_metrics
 
@@ -107,15 +111,25 @@ def search_line_items(
     end_date: str,
     period: str = "ttm",
     limit: int = 10,
-) -> list[LineItem]:
+) -> list[LineItem]:    
+    # Create a cache key that includes all parameters to ensure exact matches
+    cache_key = f"{ticker}_line-items_{period}_{end_date}"
+    
+    # Check cache first - simple exact match
+    if cached_data := _cache.get_line_items(cache_key):
+        return [LineItem(**item) for item in cached_data]
+
     """Fetch line items from API."""
+    
+    '''
     if cached_data := _cache.get_line_items(ticker):
         # Filter cached data by date and limit
         filtered_data = [LineItem(**item) for item in cached_data if item["report_period"] <= end_date]
         filtered_data.sort(key=lambda x: x.report_period, reverse=True)
         if filtered_data:
             return filtered_data[:limit]
-
+    '''
+    
     # If not in cache or insufficient data, fetch from API
     headers = {}
     if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
@@ -170,14 +184,21 @@ def search_line_items(
     data = response.json()
     response_model = LineItemResponse(**data)
     search_results = response_model.search_results
+    
+    with open('cache.txt', 'a') as f:
+        for line in search_results:
+            f.write(f"LineItem - {line}\n")
 
     if not search_results:
         return []
 
-    # Cache the results
-    _cache.set_line_items(ticker, [r.model_dump() for r in search_results])
+    # Cache the results as dicts using the comprehensive cache key
+    _cache.set_line_items(cache_key, [r.model_dump() for r in search_results])
 
-    return search_results[:limit]
+    # Cache the results
+    #_cache.set_line_items(ticker, [r.model_dump() for r in search_results])
+
+    return search_results
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_insider_trades(
