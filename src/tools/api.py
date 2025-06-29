@@ -87,16 +87,6 @@ def get_financial_metrics(
     metrics_response = FinancialMetricsResponse(**response.json())
     financial_metrics = metrics_response.financial_metrics
     
-    '''del after
-    '''
-    
-    with open('cache.txt', 'a') as f:
-        for line in financial_metrics:
-            f.write(f"FinancialMetrics - {line}\n")
-    
-    '''del before
-    '''
-    
     if not financial_metrics:
         return []
 
@@ -168,8 +158,6 @@ def search_line_items(
         "period": period,
         "limit": limit,
     }
-
-    print("Hello")
     
     response = requests.post(url, headers=headers, json=body)
     if response.status_code != 200:

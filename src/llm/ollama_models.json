@@ -1,5 +1,10 @@
 [
   {
+    "display_name": "[google] gemma3 (1B)",
+    "model_name": "gemma3:1b",
+    "provider": "Ollama"
+  },
+  {
     "display_name": "[google] gemma3 (4B)",
     "model_name": "gemma3:4b",
     "provider": "Ollama"
