@@ -24,7 +24,7 @@ from src.data.models import (
 # Global cache instance
 _cache = get_cache()
 
-#@retry(wait=wait_random_exponential(multiplier=1, max=60))
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
@@ -96,7 +96,7 @@ def get_financial_metrics(
     return financial_metrics
 
 
-retry(wait=wait_random_exponential(multiplier=1, max=60))
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def search_line_items(
     ticker: str,
     line_items_list: list[str],
@@ -232,7 +232,7 @@ def get_insider_trades(
 
     return all_trades
 
-@retry(wait=wait_random_exponential(multiplier=1, max=60))
+#@retry(wait=wait_random_exponential(multiplier=1, max=60))
 def get_company_news(
     ticker: str,
     end_date: str,
@@ -303,7 +303,7 @@ def get_market_cap(
     cache_key = f"{ticker}_metrics_ttm_{end_date}_10"
 
     if cache_key in _cache:
-        return float([FinancialMetrics(**metric)[0].market_cap for metric in _cache[f"{cache_key}"]][0])
+        return _cache[f"{cache_key}"][0].market_cap
 
     # If not in cache, fetch from API
     headers = {}
