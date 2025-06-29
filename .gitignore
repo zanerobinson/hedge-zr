@@ -50,3 +50,5 @@ node_modules
 *.pdf
 *.pkl
 *.prof
+profile.html
+profile.json
